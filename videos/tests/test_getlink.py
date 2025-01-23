@@ -7,7 +7,7 @@ from django.core.signing import TimestampSigner
 from django.utils.timezone import now
 from videos.models import Video
 from django.conf import settings
-
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 def setup_user(client):
     """Setup a test user and authenticate the client."""
@@ -24,15 +24,16 @@ def test_generate_expirable_link():
     client = APIClient()
     setup_user(client)
 
-    # Create a test video
-    video = Video.objects.create(
-        name="2260991-uhd_3840_2160_24fps.mp4",
-        duration=10,
-        size=31404195,
-        file="videos/uploads/2260991-uhd_3840_2160_24fps.mp4"
-    )
+    test_video_path = os.path.join("videos/tests/assets", "test_video1.mp4")
+    assert os.path.exists(test_video_path), f"Test video file does not exist at {test_video_path}"
+    with open(test_video_path, "rb") as video_file:
+        video = SimpleUploadedFile(
+            "test_video1.mp4", video_file.read(), content_type="video/mp4"
+        )
 
+        response = client.post("/api/videos/upload/", {"file": video, 'max_size': "31404195"})
     # Make the request to generate an expirable link
+    video = Video.objects.last()
     response = client.post(
         f"/api/videos/{video.id}/share/",
         {"expiry_time": 60}
@@ -50,17 +51,16 @@ def test_serve_video_with_valid_token():
     client = APIClient()
     setup_user(client)
 
-    # Create a test video
-    video = Video.objects.create(
-        name="2260991-uhd_3840_2160_24fps.mp4",
-        duration=10,
-        size=31404195,
-        file="videos/uploads/2260991-uhd_3840_2160_24fps.mp4"
-    )
+    test_video_path = os.path.join("videos/tests/assets", "test_video1.mp4")
+    assert os.path.exists(test_video_path), f"Test video file does not exist at {test_video_path}"
+    with open(test_video_path, "rb") as video_file:
+        video = SimpleUploadedFile(
+            "test_video1.mp4", video_file.read(), content_type="video/mp4"
+        )
 
-    full_path = os.path.join(settings.MEDIA_ROOT, video.file.path)
-    assert os.path.exists(full_path), f"Test video file does not exist at {full_path}"
-
+        response = client.post("/api/videos/upload/", {"file": video, 'max_size': "31404195"})
+    # Make the request to generate an expirable link
+    video = Video.objects.last()
     signer = TimestampSigner()
     token = signer.sign_object(
         {
