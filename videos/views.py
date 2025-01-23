@@ -154,23 +154,6 @@ class VideoMergeView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class TaskStatusView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, task_id):
-        task_result = AsyncResult(task_id)
-        if task_result.state == "PENDING":
-            return Response({"state": task_result.state, "message": "Task is pending."})
-        elif task_result.state in ["STARTED", "PROGRESS"]:
-            return Response({"state": task_result.state, "meta": task_result.info})
-        elif task_result.state == "SUCCESS":
-            return Response({"state": task_result.state, "result": task_result.info})
-        elif task_result.state == "FAILURE":
-            return Response({"state": task_result.state, "error": str(task_result.info)}, status=400)
-        else:
-            return Response({"state": task_result.state, "message": "Unknown state."})
-
-
 class GenerateExpirableLinkView(APIView):
     permission_classes = [IsAuthenticated]
 
