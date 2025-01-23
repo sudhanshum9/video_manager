@@ -1,0 +1,163 @@
+{
+	"info": {
+		"_postman_id": "4e6b3cbd-a759-4c41-9917-7adfb187ec0c",
+		"name": "Video_apis",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27560304",
+		"_collection_link": "https://red-comet-74924.postman.co/workspace/VideoVerse~ed101ae1-99ee-4409-b2e1-d724e33a0172/collection/27560304-4e6b3cbd-a759-4c41-9917-7adfb187ec0c?action=share&source=collection_link&creator=27560304"
+	},
+	"item": [
+		{
+			"name": "Upload",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Token 1db303cb2824db624c796be866fcfd92de13d908"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file\n",
+							"type": "file",
+							"src": "/Users/himanshu/Desktop/Screen Recording 2025-01-22 at 1.25.53 PM.mov"
+						},
+						{
+							"key": "max_size",
+							"value": "25242880",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/videos/upload",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"videos",
+						"upload"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "list",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Token 1db303cb2824db624c796be866fcfd92de13d908"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/videos/list",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"videos",
+						"list"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Merge videos",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Token 1db303cb2824db624c796be866fcfd92de13d908"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"video_ids\": [\"2707e865-dad7-4b0b-a94c-207edc9d6220\",\"c578670a-0147-4588-9aa6-06a992a0f803\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/videos/merge/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"videos",
+						"merge",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Trim video",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Token 1db303cb2824db624c796be866fcfd92de13d908"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"start_time\": 6,  // Starting point in seconds\n    \"end_time\": 8    // Ending point in seconds\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/videos/14b63b2a-6c06-41a9-8d43-489492cceb44/trim/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"videos",
+						"14b63b2a-6c06-41a9-8d43-489492cceb44",
+						"trim",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
