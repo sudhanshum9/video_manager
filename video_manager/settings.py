@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     "rest_framework.authtoken",
-    'videos'
+    'videos',
+    'django_celery_results'
 ]
 
 MIDDLEWARE = [
@@ -137,3 +138,19 @@ DJANGO_SETTINGS_MODULE='video_manager.settings pytest --cov=videos videos/tests/
 
 
 BASE_URL = "http://localhost:8000" 
+
+
+# Celery settings
+CELERY_BROKER_URL = 'amqp://localhost'  # RabbitMQ URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'django-db'  # Store task results in the database
+
+# Media settings
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Create media directories if they don't exist
+import os
+os.makedirs(MEDIA_ROOT / 'video_chunks', exist_ok=True)
+os.makedirs(MEDIA_ROOT / 'videos/uploads', exist_ok=True)
