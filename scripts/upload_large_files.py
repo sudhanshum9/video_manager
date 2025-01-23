@@ -41,5 +41,5 @@ def chunked_upload(file_path, url, token, chunk_size=5 * 1024 * 1024):
 # Example Usage
 file_path = "/Users/himanshu/Documents/repos/videoverse/merged_video.mp4"  # Path to your large file
 upload_url = "http://localhost:8000/api/videos/chunked_upload/"  # Your chunked upload endpoint
-token = '1db303cb2824db624c796be866fcfd92de13d908'
+token = ''
 chunked_upload(file_path, upload_url, token)
