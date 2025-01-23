@@ -10,9 +10,13 @@ from .models import Video
 from .serializers import VideoSerializer
 from .utils import validate_video, generate_expirable_link
 from .tasks import trim_video_task, merge_videos_task
-from celery.result import AsyncResult
+from django.http import FileResponse, Http404
+from django.core.signing import BadSignature, SignatureExpired
+from django.core.signing import TimestampSigner
+from django.utils.timezone import now
 
 
+signer = TimestampSigner()
 # Directory for storing temporary chunks
 CHUNKS_DIR = os.path.join(settings.MEDIA_ROOT, 'video_chunks')
 os.makedirs(CHUNKS_DIR, exist_ok=True)
@@ -162,7 +166,37 @@ class GenerateExpirableLinkView(APIView):
         
         try:
             video = Video.objects.get(id=video_id)
-            link = generate_expirable_link(video.file.url, expiry_time)
+            link = generate_expirable_link(video.id, expiry_time)
+
             return Response({"link": link}, status=status.HTTP_200_OK)
         except Video.DoesNotExist:
             return Response({"error": "Video not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class ServeVideoView(APIView):
+    def get(self, request, *args, **kwargs):
+        token = request.GET.get('token')
+        if not token:
+            raise Http404("Token is missing from the request")
+
+        try:
+            
+            data = signer.unsign_object(token, max_age=3600)  # Token expires after 1 hour
+            video_id = data.get('video_id')
+            expires_at = data.get('expires_at')
+
+            # Validate expiration
+            if expires_at < now().timestamp():
+                raise Http404("Token has expired")
+
+            video = Video.objects.get(id=video_id)
+
+            # Serve the video file
+            return FileResponse(video.file, as_attachment=False)
+
+        except (BadSignature, SignatureExpired):
+            raise Http404("Invalid or expired token")
+        except Video.DoesNotExist:
+            raise Http404("Video not found")
+        except Exception as e:
+            raise Http404(f"An error occurred: {str(e)}")

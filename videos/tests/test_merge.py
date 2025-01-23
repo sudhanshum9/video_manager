@@ -22,13 +22,13 @@ def test_merge_videos_functional():
     # Create test videos with real file paths
     video1 = Video.objects.create(
         name="test_video1.mp4",
-        duration=10,
+        duration=20,
         size=31404195,
         file="videos/tests/assets/test_video1.mp4"
     )
     video2 = Video.objects.create(
         name="test_video2.mp4",
-        duration=20,
+        duration=10,
         size=55166599,
         file="videos/tests/assets/test_video2.mp4"
     )

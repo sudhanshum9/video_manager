@@ -22,8 +22,8 @@ def test_trim_video_functional():
     # Create a test video record
     video = Video.objects.create(
         name="test_video1.mp4",
-        duration=30,
-        size=1024,
+        duration=20,
+        size=31404195,
         file="videos/tests/assets/test_video1.mp4"
     )
     print(f"Created video: {video.id}")

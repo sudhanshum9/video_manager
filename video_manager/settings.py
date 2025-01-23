@@ -147,3 +147,13 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 os.makedirs(MEDIA_ROOT / 'video_chunks', exist_ok=True)
 os.makedirs(MEDIA_ROOT / 'videos/uploads', exist_ok=True)
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Media settings
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Site URL
+SITE_URL = "http://127.0.0.1:8000"
