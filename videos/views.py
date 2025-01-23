@@ -12,7 +12,6 @@ from .utils import validate_video, generate_expirable_link
 from .tasks import trim_video_task, merge_videos_task
 from celery.result import AsyncResult
 
-from uuid import UUID
 
 # Directory for storing temporary chunks
 CHUNKS_DIR = os.path.join(settings.MEDIA_ROOT, 'video_chunks')
@@ -47,26 +46,26 @@ class VideoUploadView(APIView):
             size=file.size,
         )
         return Response(VideoSerializer(video).data, status=status.HTTP_201_CREATED)
-    
+
 class VideoChunkedUploadView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         """
-        Endpoint to handle chunked file uploads.
+        Endpoint to handle chunked file uploads
         """
         try:
+            # Extract request data
             chunk_number = int(request.data.get('chunk_number'))
             total_chunks = int(request.data.get('total_chunks'))
             file_id = request.data.get('file_id', str(uuid.uuid4()))
             file_name = request.data.get('file_name')
             chunk = request.FILES['chunk']
 
-            # Create a unique directory for each upload session
             file_dir = os.path.join(CHUNKS_DIR, file_id)
             os.makedirs(file_dir, exist_ok=True)
 
-            # Save the chunk
+            # Save the chunk to the session directory
             chunk_path = os.path.join(file_dir, f'chunk_{chunk_number}')
             with open(chunk_path, 'wb') as f:
                 for chunk_data in chunk.chunks():
@@ -74,7 +73,6 @@ class VideoChunkedUploadView(APIView):
 
             # Check if all chunks are uploaded
             if chunk_number == total_chunks:
-                # Reassemble the chunks into the final file
                 final_file_path = os.path.join(settings.MEDIA_ROOT, file_name)
                 with open(final_file_path, 'wb') as final_file:
                     for i in range(1, total_chunks + 1):
@@ -82,20 +80,29 @@ class VideoChunkedUploadView(APIView):
                         with open(chunk_file_path, 'rb') as chunk_file:
                             final_file.write(chunk_file.read())
 
-                # Clean up chunk files
+                # Create a Video object after reassembly
+                video_size = os.path.getsize(final_file_path) 
+                video = Video.objects.create(
+                    file=f"videos/uploads/{file_name}",
+                    name=file_name,
+                    duration=0,
+                    size=video_size,
+                )
+
+                # Clean up chunk files and directory
                 for i in range(1, total_chunks + 1):
                     os.remove(os.path.join(file_dir, f'chunk_{i}'))
                 os.rmdir(file_dir)
 
                 return Response({
                     'message': 'File uploaded successfully!',
-                    'file_path': final_file_path
-                }, status=200)
+                    'video': VideoSerializer(video).data,
+                }, status=status.HTTP_201_CREATED)
 
-            return Response({'message': 'Chunk uploaded successfully!'}, status=200)
+            return Response({'message': 'Chunk uploaded successfully!'}, status=status.HTTP_200_OK)
 
         except Exception as e:
-            return Response({'error': str(e)}, status=400)
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VideoTrimView(APIView):
