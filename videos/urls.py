@@ -9,5 +9,4 @@ urlpatterns = [
     path("merge/", VideoMergeView.as_view(), name="video-merge"),
     path("<uuid:video_id>/share/", GenerateExpirableLinkView.as_view(), name="video-share"),
     path("tasks/<task_id>/status/", TaskStatusView.as_view(), name="task-status"),
-
 ]

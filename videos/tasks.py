@@ -1,7 +1,6 @@
-from celery import shared_task
+from celery import shared_task, current_task
 import moviepy.editor as mp
 import os
-from django.core.files.base import ContentFile
 import PIL.Image
 
 if not hasattr(PIL.Image, 'ANTIALIAS'):
@@ -35,96 +34,46 @@ def trim_video_task(file_path, start_time, end_time, output_path):
         return {'status': 'error', 'error': str(e)}
 
 
-@shared_task
-def merge_videos_task(file_paths, output_path):
+@shared_task(bind=True)
+def merge_videos_task(self, file_paths, output_path):
     """
-    Task to merge multiple videos asynchronously, ensuring proper alignment of properties.
+    Task to merge multiple videos asynchronously, with status updates.
     """
     try:
-        clips = []
-        for path in file_paths:
-            clip = mp.VideoFileClip(path)
+        self.update_state(state="STARTED", meta={"message": "Merging videos has started."})
+        current_task.update_state(state="STARTED", meta={"message": "Task started"})
 
-            # Normalize resolution and frame rate
-            clip = clip.resize(height=720)  # Resize to 720p
-            clip = clip.set_fps(30)         # Set consistent FPS
+        clips = []
+        for i, path in enumerate(file_paths):
+            clip = mp.VideoFileClip(path)
+            clip = clip.resize(height=720)  # Optional: Normalize resolution
+            clip = clip.set_fps(30)         # Optional: Normalize FPS
             clips.append(clip)
 
-        # Merge clips
+            # Update task progress
+            self.update_state(
+                state="PROGRESS",
+                meta={
+                    "message": f"Processing clip {i+1} of {len(file_paths)}.",
+                    "current": i + 1,
+                    "total": len(file_paths),
+                }
+            )
+
+        # Merge the clips
         final_clip = mp.concatenate_videoclips(clips, method="compose")
         final_clip.write_videofile(output_path, codec="libx264", audio_codec="aac")
 
-        # Gather metadata
-        duration = final_clip.duration
-        size = os.path.getsize(output_path)
-
-        # Cleanup resources
+        # Clean up resources
         for clip in clips:
             clip.close()
         final_clip.close()
 
-        return {'status': 'success', 'output_path': output_path, 'duration': duration, 'size': size}
+        # Update task status to SUCCESS
+        self.update_state(state="SUCCESS", meta={"output_path": output_path})
+        current_task.update_state(state="SUCCESS", meta={"output_path": output_path})
+
+        return {"status": "success", "output_path": output_path}
     except Exception as e:
-        return {'status': 'error', 'error': str(e)}
-
-
-
-
-# @shared_task
-# def merge_videos_task(file_paths, output_path):
-#     """
-#     Task to merge multiple videos asynchronously, ensuring proper alignment of properties.
-#     """
-#     try:
-#         clips = []
-#         for path in file_paths:
-#             clip = mp.VideoFileClip(path)
-
-#             # Normalize resolution and frame rate
-#             clip = clip.resize(height=720)  # Resize to 720p
-#             clip = clip.set_fps(30)         # Set consistent FPS
-#             clips.append(clip)
-
-#         # Merge clips
-#         final_clip = mp.concatenate_videoclips(clips, method="compose")
-#         final_clip.write_videofile(output_path, codec="libx264", audio_codec="aac")
-
-#         # Gather metadata
-#         duration = final_clip.duration
-#         size = os.path.getsize(output_path)
-
-#         # Cleanup resources
-#         for clip in clips:
-#             clip.close()
-#         final_clip.close()
-
-#         return {'status': 'success', 'output_path': output_path, 'duration': duration, 'size': size}
-#     except Exception as e:
-#         return {'status': 'error', 'error': str(e)}
-
-
-# @shared_task
-# def merge_videos_task(file_paths, output_path):
-#     """
-#     Task to merge multiple videos asynchronously.
-#     """
-#     try:
-#         if not all([os.path.exists(path) for path in file_paths]):
-#             return {'status': 'error', 'error': 'One or more files not found.'}
-
-#         clips = [mp.VideoFileClip(path) for path in file_paths]
-#         final_clip = mp.concatenate_videoclips(clips)
-#         # final_clip.write_videofile(output_path, codec="libx264", audio_codec="aac")
-#         final_clip.write_videofile(output_path)
-
-#         merged_content = ContentFile(open(output_path, "rb").read(), name=output_path)
-#         duration = final_clip.duration
-#         size = os.path.getsize(output_path)
-
-#         for clip in clips:
-#             clip.close()
-#         final_clip.close()
-
-#         return {'status': 'success', 'output_path': output_path, 'duration': duration, 'size': size}
-#     except Exception as e:
-#         return {'status': 'error', 'error': str(e)}
+        self.update_state(state="FAILURE", meta={"error": str(e)})
+        raise

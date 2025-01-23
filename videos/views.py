@@ -1,5 +1,6 @@
 import os
 import uuid
+from datetime import datetime
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -7,9 +8,11 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import Video
 from .serializers import VideoSerializer
-from .utils import validate_video, trim_video, merge_videos, generate_expirable_link
+from .utils import validate_video, generate_expirable_link
 from .tasks import trim_video_task, merge_videos_task
+from celery.result import AsyncResult
 
+from uuid import UUID
 
 # Directory for storing temporary chunks
 CHUNKS_DIR = os.path.join(settings.MEDIA_ROOT, 'video_chunks')
@@ -95,22 +98,6 @@ class VideoChunkedUploadView(APIView):
             return Response({'error': str(e)}, status=400)
 
 
-# class VideoTrimView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request, video_id):
-#         start_time = int(request.data.get("start_time", 0))
-#         end_time = int(request.data.get("end_time", 0))
-        
-#         try:
-#             video = Video.objects.get(id=video_id)
-#             trimmed_video = trim_video(video.file.path, start_time, end_time)
-#             video.file.save(trimmed_video.name, trimmed_video)
-#             return Response(VideoSerializer(video).data, status=status.HTTP_200_OK)
-#         except Video.DoesNotExist:
-#             return Response({"error": "Video not found."}, status=status.HTTP_404_NOT_FOUND)
-
-
 class VideoTrimView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -120,7 +107,7 @@ class VideoTrimView(APIView):
         
         try:
             video = Video.objects.get(id=video_id)
-            trimmed_video = f'trimmed_{start_time}_to_{end_time}.mp4'
+            trimmed_video = f'trimmed_{video.name}_{start_time}_to_{end_time}.mp4'
             output_path = os.path.join(settings.MEDIA_ROOT, trimmed_video)
 
             # Enqueue Celery task
@@ -134,24 +121,24 @@ class VideoTrimView(APIView):
             return Response({"error": "Video not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-
 class VideoMergeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         video_ids = request.data.get("video_ids", [])
-        
+        print(f'video_ids: {video_ids}')
         try:
             videos = Video.objects.filter(id__in=video_ids)
-            # if len(videos) < len(video_ids):
-            #     return Response({"error": "Some videos were not found."}, status=status.HTTP_404_NOT_FOUND)
-            
             file_paths = [video.file.path for video in videos]
-            output_path = os.path.join(settings.MEDIA_ROOT, "merged_video_2.mp4")
+            base_names = [os.path.splitext(os.path.basename(video.file.name))[0] for video in videos]
+            merged_name = "_".join(base_names)[:50]
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            merged_file_name = f"merged_{merged_name}_{timestamp}.mp4"
+            output_path = os.path.join(settings.MEDIA_ROOT, merged_file_name)
             
             # Enqueue Celery task
             task = merge_videos_task.delay(file_paths, output_path)
-            
+            print(task)
             return Response({
                 "task_id": task.id,
                 "message": "Merging started."
@@ -161,41 +148,21 @@ class VideoMergeView(APIView):
 
 
 class TaskStatusView(APIView):
-    """
-    Endpoint to check the status of a task.
-    """
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, task_id):
-        from celery.result import AsyncResult
-        result = AsyncResult(task_id)
-        return Response({
-            "task_id": task_id,
-            "status": result.status,
-            "result": result.result
-        })
+        task_result = AsyncResult(task_id)
+        if task_result.state == "PENDING":
+            return Response({"state": task_result.state, "message": "Task is pending."})
+        elif task_result.state in ["STARTED", "PROGRESS"]:
+            return Response({"state": task_result.state, "meta": task_result.info})
+        elif task_result.state == "SUCCESS":
+            return Response({"state": task_result.state, "result": task_result.info})
+        elif task_result.state == "FAILURE":
+            return Response({"state": task_result.state, "error": str(task_result.info)}, status=400)
+        else:
+            return Response({"state": task_result.state, "message": "Unknown state."})
 
-
-# class VideoMergeView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request):
-#         video_ids = request.data.get("video_ids", [])
-        
-#         try:
-#             videos = Video.objects.filter(id__in=video_ids)
-#             if len(videos) < len(video_ids):
-#                 return Response({"error": "Some videos were not found."}, status=status.HTTP_404_NOT_FOUND)
-
-#             merged_video_content, duration, size = merge_videos([video.file.path for video in videos])
-#             new_video = Video.objects.create(
-#                 file=merged_video_content,
-#                 name="merged_video.mp4",
-#                 duration=duration,
-#                 size=size,
-#             )
-#             return Response(VideoSerializer(new_video).data, status=status.HTTP_201_CREATED)
-#         except Exception as e:
-#             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
 
 class GenerateExpirableLinkView(APIView):
     permission_classes = [IsAuthenticated]

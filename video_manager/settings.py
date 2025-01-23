@@ -154,3 +154,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 import os
 os.makedirs(MEDIA_ROOT / 'video_chunks', exist_ok=True)
 os.makedirs(MEDIA_ROOT / 'videos/uploads', exist_ok=True)
+
+
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_RESULT_EXPIRES = 3600
