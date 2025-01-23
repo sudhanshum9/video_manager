@@ -168,6 +168,11 @@ Ensure you have the following installed on your system:
 
 Run unit and functional tests using `pytest`:
 
+1. **Run Test Coverage**:
+   ```bash
+   pytest --cov=videos --cov-report=term --cov-report=html videos/tests/
+   ```
+
 1. **Run All Tests**:
    ```bash
    pytest -s --cov=videos videos/tests/
