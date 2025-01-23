@@ -33,9 +33,9 @@ def test_generate_expirable_link():
         f"/api/videos/{video.id}/share/",
         {"expiry_time": 60}
     )
-    print(f"Response Data: {response.data}")  # Debugging response data
+    print(f"Response Data: {response.data}")
 
     # Assertions
     assert response.status_code == 200, f"Unexpected response: {response.data}"
     assert "link" in response.data
-    assert response.data["link"].startswith("http")  # Ensure the link looks valid
+    assert response.data["link"].startswith("http")

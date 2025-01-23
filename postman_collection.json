@@ -52,7 +52,7 @@
 			"response": []
 		},
 		{
-			"name": "list",
+			"name": "List Videos",
 			"request": {
 				"method": "GET",
 				"header": [
@@ -81,7 +81,46 @@
 			"response": []
 		},
 		{
-			"name": "Merge videos",
+			"name": "Video Link",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Token 1db303cb2824db624c796be866fcfd92de13d908"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"expiry_time\": 30\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/14b63b2a-6c06-41a9-8d43-489492cceb44/share/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"14b63b2a-6c06-41a9-8d43-489492cceb44",
+						"share",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Merge Videos",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -120,7 +159,7 @@
 			"response": []
 		},
 		{
-			"name": "Trim video",
+			"name": "Trim Video",
 			"request": {
 				"method": "POST",
 				"header": [

@@ -38,7 +38,7 @@ def test_list_videos():
 
     # Call the list API
     response = client.get("/api/videos/list/")
-    print(response.data)  # Debugging response data
+    print(response.data)
 
     # Assertions
     assert response.status_code == 200, f"Unexpected response: {response.data}"
