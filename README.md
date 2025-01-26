@@ -38,11 +38,12 @@ Ensure you have the following installed on your system:
    ```
 
 2. **Set Up a Virtual Environment**:
+   Use python 3.9
    ```bash
    python -m venv env
    source env/bin/activate
    ```
-
+  
 3. **Install Dependencies**:
    ```bash
    pip install -r requirements.txt
@@ -118,6 +119,8 @@ Ensure you have the following installed on your system:
     "file_name": "video.mp4",
     "chunk": "binary_chunk_data"
   }
+
+  I have added a script for this at 'scripts/upload_large_files.py' please use it.
   ```
 
 ### Video Processing
